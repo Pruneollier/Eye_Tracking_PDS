@@ -384,6 +384,7 @@ class ViewController: UIViewController, ARSessionDelegate {
    
     /*
      Formats TimeInterval to "mm:ss.sss"
+     formattedDate : String of the form "yyyy-MM-dd HH:mm:ss.SSS"
      */
     func formatTimeInterval(_ formattedDate: String) -> String {
         
