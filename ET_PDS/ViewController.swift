@@ -74,7 +74,7 @@ class ViewController: UIViewController, ARSessionDelegate {
     var width = Float()
     var pointsPerMeter = Float()
     
-    //Array of CGPoints storing each frame's estimated position of the gaze
+    //Array of CGPoints storing the estimated position of the gaze
     var pts = [CGPoint(x: 0.0, y: 0)]
     
     //is true when the calibration phase is over
