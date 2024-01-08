@@ -65,8 +65,8 @@ class ViewController: UIViewController, ARSessionDelegate {
     //Touch node and position
     let touchedNode = SKShapeNode(circleOfRadius: 30)
     var touchPosition: CGPoint = CGPointZero
-
-
+    
+    
     // variables
     var a = CGFloat()
     var b = CGFloat()
@@ -113,7 +113,7 @@ class ViewController: UIViewController, ARSessionDelegate {
         calibNode.fillColor = .black
         
         pointSKNode.position = CGPoint(x: a/2, y: b/2)
-
+        
         sceneView.overlaySKScene?.isUserInteractionEnabled = false
         
         a = sceneView.frame.width
@@ -150,8 +150,8 @@ class ViewController: UIViewController, ARSessionDelegate {
     }
     
     /* Called each time the frame is updated, ie. 60 times per seconds (ARKit's fps value)
-    Keep the node's position updated with the value of ARKit's lookAtPoint estimation
-    Computes the gaze estimation indicator's position */
+     Keep the node's position updated with the value of ARKit's lookAtPoint estimation
+     Computes the gaze estimation indicator's position */
     func session(_ session: ARSession, didUpdate frame : ARFrame) {
         if let faceAnchor = frame.anchors.compactMap({
             $0 as? ARFaceAnchor
@@ -171,7 +171,7 @@ class ViewController: UIViewController, ARSessionDelegate {
             projectedNode.position = SCNVector3(projectedNode.position.x, projectedNode.position.y, -0.05)
             
             touchedNode.position = CGPoint(x: Double(self.touchPosition.x), y: Double(self.touchPosition.y))
-           
+            
             let point = convertARKitPositionToSpriteKitPoint(worldPosition: simd_float3(projectedNode.worldPosition))
             
             if(run == true){
@@ -215,190 +215,209 @@ class ViewController: UIViewController, ARSessionDelegate {
         
         return CGPoint(x: a/2 + CGFloat(Float(worldPosition.y) * pointsPerMeter), y: b - CGFloat(Float(worldPosition.x) * pointsPerMeter) )
     }
-    
-    /* Computes the intersection of a given line with a given plane, in the world referential
-     p0_line : first point of the line
-     p1_line : second point of the line
-     p0_plane : point in the plane
-     normal_plane : vector normal to the plane */
-    func linePlane(p0_line: SIMD3<Float>, p1_line: SIMD3<Float>, p0_plane: SIMD3<Float> , normal_plane:SIMD3<Float>) -> SIMD3<Float> {
         
-        var ret = simd_float3.zero
-        var w = simd_float3.zero
-        var fac: Float = 0.0
         
-        let epsilon: Float = 0.01
-        let u = p1_line - p0_line
-        let dot = simd_dot(normal_plane, u)
-        
-        if (dot > epsilon) {
-            w = p0_line - p0_plane
-            fac = -simd_dot(normal_plane, w) / dot
-            ret = p0_line + (u * fac)
-        }
-        return ret
-    }
-    
-    /* Estimates the dimensions of the screen in meters.
-     length stores the estimated length in meters
-     width stores the estimated width in meters
-     pointsPerMeter stores the estimated number of CGPoints per meter
-     calibNode changes position every 4 seconds
-     upperLeft, upperRight and downLeft store the positions of the lookAtPoint at the given moment */
-    func calibration(){
-        let delayInSeconds: TimeInterval = 2.0
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + delayInSeconds) {
-            self.calibNode.position = (CGPoint(x:0,y:0))
-            self.sceneView.unprojectPoint(SCNVector3(self.calibNode.position.x, self.calibNode.position.y, 0))
+        /* Computes the intersection of a given line with a given plane, in the world referential
+         p0_line : first point of the line
+         p1_line : second point of the line
+         p0_plane : point in the plane
+         normal_plane : vector normal to the plane */
+        func linePlane(p0_line: SIMD3<Float>, p1_line: SIMD3<Float>, p0_plane: SIMD3<Float> , normal_plane:SIMD3<Float>) -> SIMD3<Float> {
+            
+            var ret = simd_float3.zero
+            var w = simd_float3.zero
+            var fac: Float = 0.0
+            
+            let epsilon: Float = 0.01
+            let u = p1_line - p0_line
+            let dot = simd_dot(normal_plane, u)
+            
+            if (dot > epsilon) {
+                w = p0_line - p0_plane
+                fac = -simd_dot(normal_plane, w) / dot
+                ret = p0_line + (u * fac)
+            }
+            return ret
         }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + (2 * delayInSeconds)) {
-            self.upperLeft.position = self.lookAtPointNode.worldPosition
+        /* Estimates the dimensions of the screen in meters.
+         length stores the estimated length in meters
+         width stores the estimated width in meters
+         pointsPerMeter stores the estimated number of CGPoints per meter
+         calibNode changes position every 4 seconds
+         upperLeft, upperRight and downLeft store the positions of the lookAtPoint at the given moment */
+        func calibration(){
+            let delayInSeconds: TimeInterval = 2.0
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + delayInSeconds) {
+                self.calibNode.position = (CGPoint(x:0,y:0))
+                self.sceneView.unprojectPoint(SCNVector3(self.calibNode.position.x, self.calibNode.position.y, 0))
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + (2 * delayInSeconds)) {
+                self.upperLeft.position = self.lookAtPointNode.worldPosition
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + (3 * delayInSeconds)) {
+                self.calibNode.position = (CGPoint(x:0,y:self.b))
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + (4 * delayInSeconds)) {
+                self.upperRight.position = self.lookAtPointNode.worldPosition
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + (5 * delayInSeconds)) {
+                self.calibNode.position = (CGPoint(x:self.a,y:0))
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + (6 * delayInSeconds)) {
+                self.downLeft.position = self.lookAtPointNode.worldPosition
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + (7 * delayInSeconds)) {
+                self.length = self.upperLeft.position.x - self.upperRight.position.x
+                self.width = self.downLeft.position.y - self.upperRight.position.y
+                self.pointsPerMeter = Float(self.a) / self.width
+                self.run = true
+            }
+            
         }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + (3 * delayInSeconds)) {
-            self.calibNode.position = (CGPoint(x:0,y:self.b))
+        /* Returns the average position of the last k elements of array
+         array : Array of CGPoints
+         k : number of elements wanted to compute the average from
+         */
+        func averageOfLastKCGPoints(array: [CGPoint], k: Int) -> CGPoint? {
+            guard array.count >= k else {
+                return nil }
+            
+            let lastKCGPoints = Array(array.suffix(k))
+            
+            let sumX = lastKCGPoints.reduce(0) { $0 + $1.x }
+            let sumY = lastKCGPoints.reduce(0) { $0 + $1.y }
+            
+            let averageX = sumX / CGFloat(k)
+            let averageY = sumY / CGFloat(k)
+            
+            let averageCGPoint = CGPoint(x: averageX, y: averageY)
+            return averageCGPoint
         }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + (4 * delayInSeconds)) {
-            self.upperRight.position = self.lookAtPointNode.worldPosition
-        }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + (5 * delayInSeconds)) {
-            self.calibNode.position = (CGPoint(x:self.a,y:0))
-        }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + (6 * delayInSeconds)) {
-            self.downLeft.position = self.lookAtPointNode.worldPosition
-        }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + (7 * delayInSeconds)) {
-            self.length = self.upperLeft.position.x - self.upperRight.position.x
-            self.width = self.downLeft.position.y - self.upperRight.position.y
-            self.pointsPerMeter = Float(self.a) / self.width
-            self.run = true
-        }
-        
-    }
-    
-    /* Returns the average position of the last k elements of array
-     array : Array of CGPoints
-     k : number of elements wanted to compute the average from 
-     */
-    func averageOfLastKCGPoints(array: [CGPoint], k: Int) -> CGPoint? {
-        guard array.count >= k else {
-            return nil }
-        
-        let lastKCGPoints = Array(array.suffix(k))
-        
-        let sumX = lastKCGPoints.reduce(0) { $0 + $1.x }
-        let sumY = lastKCGPoints.reduce(0) { $0 + $1.y }
-        
-        let averageX = sumX / CGFloat(k)
-        let averageY = sumY / CGFloat(k)
-        
-        let averageCGPoint = CGPoint(x: averageX, y: averageY)
-        return averageCGPoint
-    }
-    
-    /*
-     Exports dataArray as a CSV file of the form "X,Y,Timestamp"
-     dataArray : Array of PointData
-     filename : wanted name for the CSV file
-     */
-    func exportCSV(dataArray: [PointData], filename : String){
-        var csvText = "X,Y,Timestamp\n"
-        
-        for data in dataArray {
+        /*
+         Exports dataArray as a CSV file of the form "X,Y,Timestamp"
+         dataArray : Array of PointData
+         filename : wanted name for the CSV file
+         */
+        func exportCSV(dataArray: [PointData], filename : String){
+            var csvText = "X,Y,Timestamp\n"
+            
+            for data in dataArray {
                 let line = "\(data.point.x),\(data.point.y),\(data.timestamp)\n"
                 csvText.append(line)
+            }
+            
+            if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+                
+                let fileURL = documentsDirectory.appendingPathComponent("\(filename).csv")
+                
+                do {
+                    try csvText.write(to: fileURL, atomically: true, encoding: .utf8)
+                    print("CSV file created at \(fileURL)")
+                } catch {
+                    print("Error writing CSV file:", error.localizedDescription)
+                }
+            }
+            
+        } 
+    
+    /*
+     Called when the user starts to touch the screen
+     */
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if let touch = touches.first {
+            self.touchPosition = touch.location(in: sceneView.overlaySKScene!)
+        }
+    }
+    
+    /*
+     Updates the touchPosition
+     */
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if let touch = touches.first {
+            self.touchPosition = touch.location(in: sceneView.overlaySKScene!)
+        }
+    }
+    
+        /*
+         Exports dataArray as a CSV file of the form "Timestamp,Xrot,Yrot,Zrot,Xdiff,Ydiff"
+         dataArray : Array of PointData
+         filename : wanted name for the CSV file
+         */
+        func exportCSV(dataArray: [PointDiff], filename : String){
+            var csvText = "Timestamp,Xrot,Yrot,Zrot,Xdiff,Ydiff\n"
+            
+            for data in dataArray {
+                let line = "\(data.timestamp),\(data.Xrot),\(data.Yrot),\(data.Zrot),\(data.Xdiff),\(data.Ydiff)\n"
+                csvText.append(line)
+            }
+            
+            if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+                
+                let fileURL = documentsDirectory.appendingPathComponent("\(filename).csv")
+                
+                do {
+                    try csvText.write(to: fileURL, atomically: true, encoding: .utf8)
+                    print("CSV file created at \(fileURL)")
+                } catch {
+                    print("Error writing CSV file:", error.localizedDescription)
+                }
+            }
+            
         }
         
-        if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
-
-            let fileURL = documentsDirectory.appendingPathComponent("\(filename).csv")
-
-            do {
-                try csvText.write(to: fileURL, atomically: true, encoding: .utf8)
-                print("CSV file created at \(fileURL)")
-            } catch {
-                print("Error writing CSV file:", error.localizedDescription)
+        /*
+         Exports dataArray as a CSV file of the form "Timestamp, Xface, Yface, Zface, Xdiff, Ydiff"
+         dataArray : Array of PointData
+         filename : wanted name for the CSV file
+         */
+        func exportCSV(dataArray: [DistanceData], filename: String){
+            var csvText = "Timestamp, Xface, Yface, Zface, Xdiff, Ydiff\n"
+            
+            for data in dataArray {
+                let line = "\(data.timestamp),\(data.Xface),\(data.Yface),\(data.Zface),\(data.Xdiff),\(data.Ydiff)\n"
+                csvText.append(line)
             }
+            
+            if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+                
+                let fileURL = documentsDirectory.appendingPathComponent("\(filename).csv")
+                
+                do {
+                    try csvText.write(to: fileURL, atomically: true, encoding: .utf8)
+                    print("CSV file created at \(fileURL)")
+                } catch {
+                    print("Error writing CSV file:", error.localizedDescription)
+                }
+            }
+        }
+        
+        /*
+         Formats TimeInterval to "mm:ss.sss"
+         formattedDate : String of the form "yyyy-MM-dd HH:mm:ss.SSS"
+         */
+        func formatTimeInterval(_ formattedDate: String) -> String {
+            
+            dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+            let date1 = dateFormatter.date(from: t0)
+            let date2 = dateFormatter.date(from: formattedDate)
+            let interval = date2!.timeIntervalSince(date1!)
+            
+            let minutes = Int(interval) / 60
+            let seconds = Int(interval) % 60
+            let milliseconds = Int(interval.truncatingRemainder(dividingBy: 1) * 1000)
+            return String(format: "%02d:%02d.%03d", minutes, seconds, milliseconds)
         }
         
     }
     
-    /*
-     Exports dataArray as a CSV file of the form "Timestamp,Xrot,Yrot,Zrot,Xdiff,Ydiff"
-     dataArray : Array of PointData
-     filename : wanted name for the CSV file
-     */
-    func exportCSV(dataArray: [PointDiff], filename : String){
-        var csvText = "Timestamp,Xrot,Yrot,Zrot,Xdiff,Ydiff\n"
-        
-        for data in dataArray {
-            let line = "\(data.timestamp),\(data.Xrot),\(data.Yrot),\(data.Zrot),\(data.Xdiff),\(data.Ydiff)\n"
-                csvText.append(line)
-        }
-        
-        if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
-
-            let fileURL = documentsDirectory.appendingPathComponent("\(filename).csv")
-
-            do {
-                try csvText.write(to: fileURL, atomically: true, encoding: .utf8)
-                print("CSV file created at \(fileURL)")
-            } catch {
-                print("Error writing CSV file:", error.localizedDescription)
-            }
-        }
-        
-    }
-    
-    /*
-     Exports dataArray as a CSV file of the form "Timestamp, Xface, Yface, Zface, Xdiff, Ydiff"
-     dataArray : Array of PointData
-     filename : wanted name for the CSV file
-     */
-    func exportCSV(dataArray: [DistanceData], filename: String){
-        var csvText = "Timestamp, Xface, Yface, Zface, Xdiff, Ydiff\n"
-        
-        for data in dataArray {
-            let line = "\(data.timestamp),\(data.Xface),\(data.Yface),\(data.Zface),\(data.Xdiff),\(data.Ydiff)\n"
-                csvText.append(line)
-        }
-        
-        if let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
-
-            let fileURL = documentsDirectory.appendingPathComponent("\(filename).csv")
-
-            do {
-                try csvText.write(to: fileURL, atomically: true, encoding: .utf8)
-                print("CSV file created at \(fileURL)")
-            } catch {
-                print("Error writing CSV file:", error.localizedDescription)
-            }
-        }
-    }
-   
-    /*
-     Formats TimeInterval to "mm:ss.sss"
-     formattedDate : String of the form "yyyy-MM-dd HH:mm:ss.SSS"
-     */
-    func formatTimeInterval(_ formattedDate: String) -> String {
-        
-        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
-        let date1 = dateFormatter.date(from: t0)
-        let date2 = dateFormatter.date(from: formattedDate)
-        let interval = date2!.timeIntervalSince(date1!)
-        
-        let minutes = Int(interval) / 60
-        let seconds = Int(interval) % 60
-        let milliseconds = Int(interval.truncatingRemainder(dividingBy: 1) * 1000)
-        return String(format: "%02d:%02d.%03d", minutes, seconds, milliseconds)
-    }
-
-}
-
 
